@@ -1,0 +1,147 @@
+---
+/**
+ * 首屏玻璃雨窗 hero。
+ * 背景图静态呈现，上层 Canvas 负责雾/雨/涟漪。
+ * 站名与签名固定在左下角，无提示文案、无下滑箭头（按设计约定）。
+ */
+import { Image } from "astro:assets";
+import { siteConfig } from "@/config";
+import heroImage from "@/assets/images/hero-glass.png";
+
+const { title, subtitle } = siteConfig;
+---
+
+<section id="hero-glass" class="hero-glass" aria-label={title}>
+  <div class="hero-glass__bg">
+    <Image
+      src={heroImage}
+      alt=""
+      widths={[960, 1440, 1920, 2600]}
+      sizes="100vw"
+      quality={82}
+      loading="eager"
+      class="hero-glass__img"
+    />
+  </div>
+
+  <canvas id="hero-glass-canvas" class="hero-glass__canvas"></canvas>
+
+  <div class="hero-glass__caption">
+    <h1 class="hero-glass__title">{title}</h1>
+    <p class="hero-glass__subtitle">{subtitle}</p>
+  </div>
+
+  <div class="hero-glass__fade" aria-hidden="true"></div>
+</section>
+
+<style lang="stylus">
+  .hero-glass
+    position relative
+    width 100%
+    height 100vh
+    height 100svh
+    overflow hidden
+    // 与下方内容区之间不留缝
+    margin-bottom -1px
+
+  .hero-glass__bg
+    position absolute
+    inset 0
+
+  .hero-glass__img
+    width 100%
+    height 100%
+    object-fit cover
+    object-position center
+    // 背景图本身略压暗，让白色文字有足够对比度
+    filter saturate(1.05) brightness(0.92)
+
+  .hero-glass__canvas
+    position absolute
+    inset 0
+    width 100%
+    height 100%
+    touch-action pan-y
+    cursor crosshair
+
+  .hero-glass__caption
+    position absolute
+    left clamp(1.5rem, 6vw, 6rem)
+    bottom clamp(4rem, 14vh, 9rem)
+    z-index 2
+    pointer-events none
+    user-select none
+
+  .hero-glass__title
+    margin 0
+    font-size clamp(1.75rem, 3.4vw, 3rem)
+    font-weight 300
+    letter-spacing 0.22em
+    line-height 1.1
+    color rgba(255, 255, 255, 0.94)
+    text-shadow 0 2px 24px rgba(12, 26, 48, 0.55)
+
+  .hero-glass__subtitle
+    margin 0.75rem 0 0
+    font-size clamp(0.8rem, 1vw, 1rem)
+    font-weight 300
+    letter-spacing 0.4em
+    text-transform lowercase
+    color rgba(255, 255, 255, 0.7)
+    text-shadow 0 1px 16px rgba(12, 26, 48, 0.5)
+
+  // 底部渐隐，缝合 hero 与内容区背景
+  .hero-glass__fade
+    position absolute
+    left 0
+    right 0
+    bottom 0
+    height 28vh
+    z-index 1
+    pointer-events none
+    background linear-gradient(to bottom, transparent, var(--page-bg) 92%)
+</style>
+
+<script>
+  import { createGlassCanvas } from "@/utils/glass-canvas";
+  import { heroConfig } from "@/config";
+
+  let destroy: (() => void) | null = null;
+
+  function setup() {
+    destroy?.();
+    destroy = null;
+
+    const canvas = document.getElementById(
+      "hero-glass-canvas",
+    ) as HTMLCanvasElement | null;
+    if (!canvas || !heroConfig.enable) return;
+
+    destroy = createGlassCanvas(canvas, {
+      fogOpacity: heroConfig.fog.opacity,
+      eraseRadius: heroConfig.fog.eraseRadius,
+      restoreSpeed: heroConfig.fog.restoreSpeed,
+      rainEnable: heroConfig.rain.enable,
+      rainCount: heroConfig.rain.count,
+      rainSpeed: heroConfig.rain.speed,
+      rippleEnable: heroConfig.ripple.enable,
+      rippleMaxCount: heroConfig.ripple.maxCount,
+    });
+
+    // 滚动时雾雨整体淡出，让阅读区安静
+    const hero = document.getElementById("hero-glass");
+    if (!hero) return;
+    const onScroll = () => {
+      const fadeEnd = window.innerHeight * 0.75;
+      const t = Math.min(window.scrollY / fadeEnd, 1);
+      canvas.style.opacity = String(1 - t);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  setup();
+  // Swup 页面切换后重新挂载
+  document.addEventListener("astro:after-swap", setup);
+  document.addEventListener("swup:contentReplaced", setup);
+</script>

@@ -1,0 +1,68 @@
+---
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getCategoryList, getSortedPostsList } from "@utils/content-utils";
+import { getPostUrlBySlug } from "@utils/url-utils";
+
+const categories = await getCategoryList();
+const posts = await getSortedPostsList();
+
+// 按分类归组，未分类的文章归到 i18n 的「未分类」下
+const uncategorized = i18n(I18nKey.uncategorized);
+const grouped = categories.map((category) => ({
+	...category,
+	posts: posts.filter((post) => {
+		const name = post.data.category?.trim() || uncategorized;
+		return name === category.name;
+	}),
+}));
+---
+
+<MainGridLayout title={i18n(I18nKey.categories)} description={i18n(I18nKey.categories)}>
+	<div class="card-base glass-panel px-6 py-6 md:px-9 md:py-8">
+		<h1 class="text-3xl font-bold text-[var(--primary)] mb-2">{i18n(I18nKey.categories)}</h1>
+		<p class="text-black/50 dark:text-white/50 text-sm mb-8">
+			{categories.length} 个分类 · {posts.length} 篇文章
+		</p>
+
+		{grouped.length === 0 && (
+			<p class="text-black/50 dark:text-white/50">还没有分类，写第一篇文章后这里会自动出现。</p>
+		)}
+
+		{grouped.map((category) => (
+			<section class="mb-10 last:mb-0">
+				<a
+					href={category.url}
+					class="group inline-flex items-baseline gap-2 mb-4 no-underline"
+				>
+					<span class="text-xl font-semibold text-90 group-hover:text-[var(--primary)] transition">
+						{category.name}
+					</span>
+					<span class="text-sm text-black/40 dark:text-white/40">{category.count}</span>
+				</a>
+				<ul class="flex flex-col gap-1 pl-1 border-l border-[var(--line-divider)]">
+					{category.posts.map((post) => (
+						<li>
+							<a
+								href={getPostUrlBySlug(post.slug)}
+								class="flex items-baseline justify-between gap-4 py-1.5 px-3 rounded-lg
+									hover:bg-[var(--btn-plain-bg-hover)] transition no-underline"
+							>
+								<span class="text-75 hover:text-[var(--primary)] transition truncate">
+									{post.data.title}
+								</span>
+								<time
+									class="shrink-0 text-xs text-black/40 dark:text-white/40 tabular-nums"
+									datetime={new Date(post.data.published).toISOString()}
+								>
+									{new Date(post.data.published).toLocaleDateString("zh-CN")}
+								</time>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		))}
+	</div>
+</MainGridLayout>

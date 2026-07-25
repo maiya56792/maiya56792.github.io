@@ -1,0 +1,80 @@
+---
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPostsList, getTagList } from "@utils/content-utils";
+import { getPostUrlBySlug, getTagUrl } from "@utils/url-utils";
+
+const tags = await getTagList();
+const posts = await getSortedPostsList();
+
+// 标签云字号按文章数缩放，最少 1 篇也要可读
+const maxCount = Math.max(1, ...tags.map((t) => t.count));
+const sizeOf = (count: number) => 0.85 + (count / maxCount) * 0.55;
+
+const grouped = tags.map((tag) => ({
+	...tag,
+	posts: posts.filter((post) => post.data.tags?.includes(tag.name)),
+}));
+---
+
+<MainGridLayout title={i18n(I18nKey.tags)} description={i18n(I18nKey.tags)}>
+	<div class="card-base glass-panel px-6 py-6 md:px-9 md:py-8">
+		<h1 class="text-3xl font-bold text-[var(--primary)] mb-2">{i18n(I18nKey.tags)}</h1>
+		<p class="text-black/50 dark:text-white/50 text-sm mb-6">
+			{tags.length} 个标签 · {posts.length} 篇文章
+		</p>
+
+		{tags.length === 0 ? (
+			<p class="text-black/50 dark:text-white/50">还没有标签，在文章 frontmatter 的 tags 里填写即可。</p>
+		) : (
+			<div class="flex flex-wrap gap-2 mb-10">
+				{tags.map((tag) => (
+					<a
+						href={getTagUrl(tag.name)}
+						style={`font-size: ${sizeOf(tag.count)}rem`}
+						class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full no-underline
+							bg-[var(--btn-regular-bg)] text-[var(--btn-content)]
+							hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)]
+							transition"
+					>
+						<span>{tag.name}</span>
+						<span class="text-[0.7em] opacity-60 tabular-nums">{tag.count}</span>
+					</a>
+				))}
+			</div>
+		)}
+
+		{grouped.map((tag) => (
+			<section class="mb-8 last:mb-0">
+				<a href={getTagUrl(tag.name)} class="group inline-flex items-baseline gap-2 mb-3 no-underline">
+					<span class="text-lg font-semibold text-90 group-hover:text-[var(--primary)] transition">
+						#{tag.name}
+					</span>
+					<span class="text-sm text-black/40 dark:text-white/40">{tag.count}</span>
+				</a>
+				<ul class="flex flex-col gap-1 pl-1 border-l border-[var(--line-divider)]">
+					{tag.posts.map((post) => (
+						<li>
+							<a
+								href={getPostUrlBySlug(post.slug)}
+								class="flex items-baseline justify-between gap-4 py-1.5 px-3 rounded-lg
+									hover:bg-[var(--btn-plain-bg-hover)] transition no-underline"
+							>
+								<span class="text-75 hover:text-[var(--primary)] transition truncate">
+									{post.data.title}
+								</span>
+								<time
+									class="shrink-0 text-xs text-black/40 dark:text-white/40 tabular-nums"
+									datetime={new Date(post.data.published).toISOString()}
+								>
+									{new Date(post.data.published).toLocaleDateString("zh-CN")}
+								</time>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		))}
+	</div>
+</MainGridLayout>

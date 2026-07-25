@@ -1,0 +1,17 @@
+---
+// 全站样式入口：Tailwind 基础层 + 主题变量 + 各模块样式
+// 拆成组件而非直接写在 Layout，是为了让 @layer 顺序稳定
+import "../styles/variables.styl";
+import "../styles/main.css";
+import "../styles/markdown.css";
+import "../styles/markdown-extend.styl";
+import "../styles/scrollbar.css";
+import "../styles/transition.css";
+import "../styles/expressive-code.css";
+---
+
+<style is:global>
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+</style>

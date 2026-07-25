@@ -1,0 +1,340 @@
+---
+import ConfigCarrier from "@components/ConfigCarrier.astro";
+import GlobalStyles from "@components/GlobalStyles.astro";
+import { profileConfig, siteConfig } from "@/config";
+import { PAGE_WIDTH } from "../constants/constants";
+import { defaultFavicons } from "../constants/icon";
+import type { Favicon } from "../types/config";
+import { url } from "../utils/url-utils";
+import "katex/dist/katex.css";
+
+interface Props {
+	title?: string;
+	description?: string;
+	lang?: string;
+	setOGTypeArticle?: boolean;
+}
+
+let { title, description, lang, setOGTypeArticle } = Astro.props;
+
+// defines global css variables
+// why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
+const configHue = siteConfig.themeColor.hue;
+
+let pageTitle: string;
+if (title) {
+	pageTitle = `${title} - ${siteConfig.title}`;
+} else {
+	pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
+}
+
+const favicons: Favicon[] =
+	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+
+// const siteLang = siteConfig.lang.replace('_', '-')
+if (!lang) {
+	lang = `${siteConfig.lang}`;
+}
+const siteLang = lang.replace("_", "-");
+---
+
+<!DOCTYPE html>
+<html lang={siteLang} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
+	  data-overlayscrollbars-initialize
+>
+	<head>
+
+		<title>{pageTitle}</title>
+
+		<meta charset="UTF-8" />
+		<meta name="description" content={description || pageTitle}>
+		<meta name="author" content={profileConfig.name}>
+
+		<meta property="og:site_name" content={siteConfig.title}>
+		<meta property="og:url" content={Astro.url}>
+		<meta property="og:title" content={pageTitle}>
+		<meta property="og:description" content={description || pageTitle}>
+		{setOGTypeArticle ? (
+        <meta property="og:type" content="article" />
+        ) : (
+        <meta property="og:type" content="website" />
+        )}
+
+		<meta name="twitter:card" content="summary_large_image">
+		<meta property="twitter:url" content={Astro.url}>
+		<meta name="twitter:title" content={pageTitle}>
+		<meta name="twitter:description" content={description || pageTitle}>
+
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		{favicons.map(favicon => (
+			<link rel="icon"
+				  href={favicon.src.startsWith('/') ? url(favicon.src) : favicon.src}
+				  sizes={favicon.sizes}
+				  media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
+			/>
+		))}
+
+		<!-- 单一冷蓝暗色配色：固定 dark 类与色相，不读取 localStorage，避免首屏闪色 -->
+		<script is:inline define:vars={{configHue}}>
+			document.documentElement.classList.add('dark');
+			document.documentElement.style.setProperty('--hue', configHue);
+		</script>
+		<style define:vars={{
+			configHue,
+			'page-width': `${PAGE_WIDTH}rem`,
+		}}></style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
+
+
+		<GlobalStyles />
+
+		<slot name="head"></slot>
+
+		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
+
+	</head>
+	<body class="min-h-screen transition" data-overlayscrollbars-initialize>
+		<ConfigCarrier></ConfigCarrier>
+		<slot />
+
+		<!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
+		<div id="page-height-extend" class="hidden h-[300vh]"></div>
+	</body>
+</html>
+
+<style is:global>
+@tailwind components;
+@layer components {
+	/* 导航栏在 hero 之上透明，进入内容区后由脚本加上 navbar-solid */
+	#navbar-wrapper > :global(*) {
+		@apply transition-all duration-500
+	}
+	.navbar-hidden {
+		@apply opacity-0 -translate-y-16
+	}
+}
+</style>
+
+<script>
+import 'overlayscrollbars/overlayscrollbars.css';
+import {
+	OverlayScrollbars,
+	// ScrollbarsHidingPlugin,
+	// SizeObserverPlugin,
+	// ClickScrollPlugin
+} from 'overlayscrollbars';
+import {pathsEqual, url} from "../utils/url-utils";
+import {
+	BANNER_HEIGHT,
+	BANNER_HEIGHT_HOME,
+	BANNER_HEIGHT_EXTEND,
+	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT
+} from "../constants/constants";
+import { siteConfig } from '../config';
+
+/* Preload fonts */
+// (async function() {
+// 	try {
+// 		await Promise.all([
+// 			document.fonts.load("400 1em Roboto"),
+// 			document.fonts.load("700 1em Roboto"),
+// 		]);
+// 		document.body.classList.remove("hidden");
+// 	} catch (error) {
+// 		console.log("Failed to load fonts:", error);
+// 	}
+// })();
+
+/* TODO This is a temporary solution for style flicker issue when the transition is activated */
+/* issue link: https://github.com/withastro/astro/issues/8711, the solution get from here too */
+/* update: fixed in Astro 3.2.4 */
+/*
+function disableAnimation() {
+	const css = document.createElement('style')
+	css.appendChild(
+		document.createTextNode(
+			`*{
+              -webkit-transition:none!important;
+              -moz-transition:none!important;
+              -o-transition:none!important;
+              -ms-transition:none!important;
+              transition:none!important
+              }`
+		)
+	)
+	document.head.appendChild(css)
+
+	return () => {
+		// Force restyle
+		;(() => window.getComputedStyle(document.body))()
+
+		// Wait for next tick before removing
+		setTimeout(() => {
+			document.head.removeChild(css)
+		}, 1)
+	}
+}
+*/
+
+const bannerEnabled = !!document.getElementById('banner-wrapper')
+
+function setClickOutsideToClose(panel: string, ignores: string[]) {
+	document.addEventListener("click", event => {
+		let panelDom = document.getElementById(panel);
+		let tDom = event.target;
+		if (!(tDom instanceof Node)) return;		// Ensure the event target is an HTML Node
+		for (let ig of ignores) {
+			let ie = document.getElementById(ig)
+			if (ie == tDom || (ie?.contains(tDom))) {
+				return;
+			}
+		}
+		panelDom!.classList.add("float-panel-closed");
+	});
+}
+setClickOutsideToClose("display-setting", ["display-setting", "display-settings-switch"])
+setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
+setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
+
+
+function initCustomScrollbar() {
+	const bodyElement = document.querySelector('body');
+	if (!bodyElement) return;
+	OverlayScrollbars(
+		// docs say that a initialization to the body element would affect native functionality like window.scrollTo
+		// but just leave it here for now
+		{
+			target: bodyElement,
+			cancel: {
+				nativeScrollbarsOverlaid: true,    // don't initialize the overlay scrollbar if there is a native one
+			}
+		}, {
+		scrollbars: {
+			theme: 'scrollbar-base scrollbar-auto py-1',
+			autoHide: 'move',
+			autoHideDelay: 500,
+			autoHideSuspend: false,
+		},
+	});
+
+	const katexElements = document.querySelectorAll('.katex-display') as NodeListOf<HTMLElement>;
+
+	const katexObserverOptions = {
+		root: null,
+		rootMargin: '100px',
+		threshold: 0.1
+	};
+
+	const processKatexElement = (element: HTMLElement) => {
+		if (!element.parentNode) return;
+		if (element.hasAttribute('data-scrollbar-initialized')) return;
+
+		const container = document.createElement('div');
+		container.className = 'katex-display-container';
+		container.setAttribute('aria-label', 'scrollable container for formulas');
+
+		element.parentNode.insertBefore(container, element);
+		container.appendChild(element);
+
+		OverlayScrollbars(container, {
+			scrollbars: {
+				theme: 'scrollbar-base scrollbar-auto',
+				autoHide: 'leave',
+				autoHideDelay: 500,
+				autoHideSuspend: false
+			}
+		});
+
+		element.setAttribute('data-scrollbar-initialized', 'true');
+	};
+
+	const katexObserver = new IntersectionObserver((entries, observer) => {
+		entries.forEach(entry => {
+			if (entry.isIntersecting) {
+			processKatexElement(entry.target as HTMLElement);
+			observer.unobserve(entry.target);
+			}
+		});
+	}, katexObserverOptions);
+
+	katexElements.forEach(element => {
+		katexObserver.observe(element);
+	});
+}
+
+function init() {
+	// 配色已在 head 内联脚本固定，此处只初始化滚动条
+	initCustomScrollbar();
+}
+
+init();
+
+const setup = () => {
+	window.swup.hooks.on('link:click', () => {
+		// 首次进站的入场延迟只用一次，之后清零
+		document.documentElement.style.setProperty('--content-delay', '0ms')
+	})
+	window.swup.hooks.on('content:replace', initCustomScrollbar)
+	window.swup.hooks.on('visit:start', () => {
+		// 过渡期间临时撑高页面，避免回顶动画跳动
+		const heightExtend = document.getElementById('page-height-extend')
+		if (heightExtend) {
+			heightExtend.classList.remove('hidden')
+		}
+
+		const toc = document.getElementById('toc-wrapper');
+		if (toc) {
+			toc.classList.add('toc-not-ready')
+		}
+	});
+	window.swup.hooks.on('visit:end', () => {
+		setTimeout(() => {
+			const heightExtend = document.getElementById('page-height-extend')
+			if (heightExtend) {
+				heightExtend.classList.add('hidden')
+			}
+
+			const toc = document.getElementById('toc-wrapper');
+			if (toc) {
+				toc.classList.remove('toc-not-ready')
+			}
+		}, 200)
+	});
+}
+if (window?.swup?.hooks) {
+	setup()
+} else {
+	document.addEventListener('swup:enable', setup)
+}
+
+/**
+ * 滚动响应：
+ *  - 回到顶部按钮：滚过阈值后出现
+ *  - TOC：首页有 hero 时，滚过 hero 才显示
+ *  - Navbar：hero 页面上滚动进内容区后加实底毛玻璃
+ */
+function scrollFunction() {
+	const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
+	const hero = document.getElementById('hero-glass')
+	const threshold = hero ? hero.offsetHeight * 0.6 : window.innerHeight / 3
+
+	const backToTopBtn = document.getElementById('back-to-top-btn');
+	if (backToTopBtn) {
+		backToTopBtn.classList.toggle('hide', scrollTop <= threshold)
+	}
+
+	const toc = document.getElementById('toc-wrapper');
+	if (toc && hero) {
+		toc.classList.toggle('toc-hide', scrollTop <= threshold)
+	}
+
+	const navbar = document.getElementById('navbar-wrapper')
+	if (navbar) {
+		// hero 之上导航栏透明，进入内容区后加实底保证可读性
+		navbar.classList.toggle('navbar-solid', !hero || scrollTop > window.innerHeight * 0.5)
+	}
+}
+scrollFunction()
+window.addEventListener('scroll', scrollFunction, { passive: true })
+document.addEventListener('astro:after-swap', scrollFunction)
+

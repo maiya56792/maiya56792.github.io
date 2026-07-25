@@ -16,7 +16,7 @@ interface Props {
 	lang?: string;
 	setOGTypeArticle?: boolean;
 	headings?: MarkdownHeading[];
-	/** 是否显示首屏玻璃 hero，仅首页传 true */
+	/** 是否在正文上方显示首屏玻璃 Hero */
 	hero?: boolean;
 }
 
@@ -43,10 +43,15 @@ const {
     </div>
 </div>
 
-<!-- 首屏玻璃 hero，仅首页 -->
-{hero && <HeroGlass />}
+<!--
+    Hero 需要有一个每页都存在的 Swup 容器。
+    否则从内页返回首页时，Swup 只会替换正文，无法把 Hero 重新插回页面。
+-->
+<div id="hero-container">
+    {hero && <HeroGlass />}
+</div>
 
-<!-- Main content：正常文档流，紧接 hero 之后 -->
+<!-- Main content：正常文档流，有 Hero 时紧接其后 -->
 <div class:list={["relative w-full z-30 bg-[var(--page-bg)]", hero ? "pt-6" : "pt-[5.5rem]"]}>
     <div class="relative max-w-[var(--page-width)] mx-auto">
         <div id="main-grid" class="transition duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto]

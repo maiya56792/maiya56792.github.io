@@ -9,18 +9,18 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 	},
 	[LinkPreset.About]: {
 		name: i18n(I18nKey.about),
-		url: "/about/",
+		url: "/about/#main-grid",
 	},
 	[LinkPreset.Archive]: {
 		name: i18n(I18nKey.archive),
-		url: "/archive/",
+		url: "/archive/#main-grid",
 	},
 	[LinkPreset.Categories]: {
 		name: i18n(I18nKey.categories),
-		url: "/categories/",
+		url: "/categories/#main-grid",
 	},
 	[LinkPreset.Tags]: {
 		name: i18n(I18nKey.tags),
-		url: "/tags/",
+		url: "/tags/#main-grid",
 	},
 };

@@ -61,6 +61,8 @@ const { title, subtitle } = siteConfig;
     inset 0
     width 100%
     height 100%
+    // 必须显式压在 fade(1)/caption(2) 之下、背景图之上，否则渐隐层会盖住雨雾
+    z-index 1
     touch-action pan-y
     cursor crosshair
 
@@ -68,7 +70,7 @@ const { title, subtitle } = siteConfig;
     position absolute
     left clamp(1.5rem, 6vw, 6rem)
     bottom clamp(4rem, 14vh, 9rem)
-    z-index 2
+    z-index 3
     pointer-events none
     user-select none
 
@@ -97,7 +99,7 @@ const { title, subtitle } = siteConfig;
     right 0
     bottom 0
     height 28vh
-    z-index 1
+    z-index 2
     pointer-events none
     background linear-gradient(to bottom, transparent, var(--page-bg) 92%)
 </style>

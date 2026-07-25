@@ -43,15 +43,15 @@ export const heroConfig: HeroConfig = {
 	src: "assets/images/hero-glass.png",
 	// 雾层
 	fog: {
-		opacity: 0.82, // 初始雾浓度（0~1）
-		eraseRadius: 90, // 鼠标擦除半径（px）
-		restoreSpeed: 0.006, // 雾恢复速度，越大恢复越快
+		opacity: 0.55, // 初始雾浓度（0~1）；过高会把背景图和雨滴一起糊掉
+		eraseRadius: 110, // 鼠标擦除半径（px）
+		restoreSpeed: 0.004, // 雾恢复速度，越大恢复越快
 	},
 	// 雨滴
 	rain: {
 		enable: true,
-		count: 90, // 雨滴数量上限
-		speed: 1.6, // 下落速度基数
+		count: 140, // 雨滴数量上限
+		speed: 1.8, // 下落速度基数
 	},
 	// 水波纹（点击/擦除时的涟漪）
 	ripple: {

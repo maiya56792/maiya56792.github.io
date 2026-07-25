@@ -20,7 +20,8 @@
     }
 
     a:not(.no-styling) {
-        @apply relative bg-none link font-medium text-[var(--primary)]
+        /* 不能 @apply main.css 的 .link：markdown.css 是独立 PostCSS 入口，取不到那个 @layer */
+        @apply relative bg-none rounded-md font-medium text-[var(--primary)]
         underline decoration-[var(--link-underline)] decoration-1 decoration-dashed underline-offset-4;
         box-decoration-break: clone;
         -webkit-box-decoration-break: clone;

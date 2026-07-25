@@ -30,6 +30,7 @@ interface Drop {
 	len: number;
 	vy: number;
 	alpha: number;
+	width: number;
 }
 
 interface Ripple {
@@ -90,12 +91,17 @@ export function createGlassCanvas(
 		drops.length = 0;
 		if (!opts.rainEnable) return;
 		for (let i = 0; i < rainCount; i++) {
+			// 分层：少数近景雨滴更长更粗更亮，多数远景细而淡，形成景深
+			const near = Math.random() < 0.3;
 			drops.push({
 				x: Math.random() * w,
 				y: Math.random() * h,
-				len: 8 + Math.random() * 22,
-				vy: (0.6 + Math.random() * 1.4) * opts.rainSpeed,
-				alpha: 0.06 + Math.random() * 0.16,
+				len: near ? 26 + Math.random() * 34 : 10 + Math.random() * 20,
+				vy:
+					(near ? 1.3 + Math.random() * 1.2 : 0.6 + Math.random() * 0.9) *
+					opts.rainSpeed,
+				alpha: near ? 0.42 + Math.random() * 0.3 : 0.18 + Math.random() * 0.22,
+				width: near ? 1.4 + Math.random() * 0.8 : 0.8 + Math.random() * 0.4,
 			});
 		}
 	}
@@ -137,10 +143,16 @@ export function createGlassCanvas(
 	function drawRain() {
 		if (!opts.rainEnable) return;
 		ctx.save();
-		ctx.strokeStyle = "rgba(255,255,255,1)";
-		ctx.lineWidth = 1;
+		ctx.lineCap = "round";
 		for (const d of drops) {
-			ctx.globalAlpha = d.alpha;
+			// 纯白细线画在白雾上几乎不可见，改用竖向渐变：
+			// 头部偏亮、尾部拉长淡出，形成可辨的流痕
+			const g = ctx.createLinearGradient(d.x, d.y, d.x, d.y + d.len);
+			g.addColorStop(0, `rgba(255,255,255,${d.alpha * 0.25})`);
+			g.addColorStop(0.7, `rgba(244,250,255,${d.alpha})`);
+			g.addColorStop(1, `rgba(190,214,240,${d.alpha * 0.5})`);
+			ctx.strokeStyle = g;
+			ctx.lineWidth = d.width;
 			ctx.beginPath();
 			ctx.moveTo(d.x, d.y);
 			ctx.lineTo(d.x + 0.6, d.y + d.len);
@@ -159,12 +171,21 @@ export function createGlassCanvas(
 		ctx.save();
 		for (let i = ripples.length - 1; i >= 0; i--) {
 			const rp = ripples[i];
+			// 双环：外圈亮白、内圈偏蓝，比单条白线在雾上更容易辨认
 			ctx.globalAlpha = rp.alpha;
-			ctx.strokeStyle = "rgba(255,255,255,0.9)";
-			ctx.lineWidth = 1.2;
+			ctx.strokeStyle = "rgba(255,255,255,0.95)";
+			ctx.lineWidth = 2;
 			ctx.beginPath();
 			ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
 			ctx.stroke();
+
+			ctx.globalAlpha = rp.alpha * 0.5;
+			ctx.strokeStyle = "rgba(176,206,238,0.9)";
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.arc(rp.x, rp.y, Math.max(rp.r - 5, 0.5), 0, Math.PI * 2);
+			ctx.stroke();
+
 			rp.r += 1.6;
 			rp.alpha -= 0.012;
 			if (rp.alpha <= 0 || rp.r >= rp.maxR) ripples.splice(i, 1);

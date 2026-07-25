@@ -119,16 +119,34 @@ const { title, subtitle } = siteConfig;
     ) as HTMLCanvasElement | null;
     if (!canvas || !heroConfig.enable) return;
 
+    // 水面折射需要读背景图像素，把 <img> 交给 canvas 模块
+    const bgImage = document.querySelector<HTMLImageElement>(
+      ".hero-glass__img",
+    );
+
     destroy = createGlassCanvas(canvas, {
       respectReducedMotion: heroConfig.respectReducedMotion,
+      bgImage,
       fogOpacity: heroConfig.fog.opacity,
       eraseRadius: heroConfig.fog.eraseRadius,
       restoreSpeed: heroConfig.fog.restoreSpeed,
       rainEnable: heroConfig.rain.enable,
       rainCount: heroConfig.rain.count,
       rainSpeed: heroConfig.rain.speed,
+      rainDropStrength: heroConfig.rain.dropStrength,
       rippleEnable: heroConfig.ripple.enable,
       rippleMaxCount: heroConfig.ripple.maxCount,
+      ripplePointerStrength: heroConfig.ripple.pointerStrength,
+      ripplePointerRadius: heroConfig.ripple.pointerRadius,
+      waterEnable: heroConfig.water.enable,
+      waterLineRatio: heroConfig.water.lineRatio,
+      waterSimWidth: heroConfig.water.simWidth,
+      waterPerspective: heroConfig.water.perspective,
+      waterDamping: heroConfig.water.damping,
+      waterRefraction: heroConfig.water.refraction,
+      waterGloss: heroConfig.water.gloss,
+      waterTint: heroConfig.water.tint,
+      waterAmbient: heroConfig.water.ambient,
     });
 
     // 滚动时雾雨整体淡出，让阅读区安静

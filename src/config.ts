@@ -41,6 +41,8 @@ export const siteConfig: SiteConfig = {
 export const heroConfig: HeroConfig = {
 	enable: true,
 	src: "assets/images/hero-glass.png",
+	// 设为 false 可无视系统「减少动画」偏好，强制播放特效
+	respectReducedMotion: false,
 	// 雾层
 	fog: {
 		opacity: 0.55, // 初始雾浓度（0~1）；过高会把背景图和雨滴一起糊掉

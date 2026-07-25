@@ -14,6 +14,8 @@
  */
 
 export interface GlassCanvasOptions {
+	/** false 时无视系统「减少动画」偏好，强制启动 */
+	respectReducedMotion: boolean;
 	fogOpacity: number;
 	eraseRadius: number;
 	restoreSpeed: number;
@@ -56,7 +58,7 @@ export function createGlassCanvas(
 	const lowEnd =
 		(navigator.hardwareConcurrency ?? 4) <= 2 ||
 		window.matchMedia("(max-width: 640px)").matches;
-	if (reduceMotion) return () => {};
+	if (reduceMotion && opts.respectReducedMotion) return () => {};
 
 	let dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 	let w = 0;

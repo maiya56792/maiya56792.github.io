@@ -120,6 +120,7 @@ const { title, subtitle } = siteConfig;
     if (!canvas || !heroConfig.enable) return;
 
     destroy = createGlassCanvas(canvas, {
+      respectReducedMotion: heroConfig.respectReducedMotion,
       fogOpacity: heroConfig.fog.opacity,
       eraseRadius: heroConfig.fog.eraseRadius,
       restoreSpeed: heroConfig.fog.restoreSpeed,

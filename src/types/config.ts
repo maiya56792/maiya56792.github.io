@@ -48,6 +48,12 @@ export type HeroConfig = {
 	enable: boolean;
 	/** 背景图路径，相对 /src 目录；以 '/' 开头则相对 /public */
 	src: string;
+	/**
+	 * 是否尊重系统的「减少动画」偏好（prefers-reduced-motion: reduce）。
+	 * true（默认）：命中该偏好时不启动 Canvas，只留静态背景图。
+	 * false：无视系统偏好，始终播放雾/雨/涟漪。
+	 */
+	respectReducedMotion: boolean;
 	fog: {
 		opacity: number;
 		eraseRadius: number;
